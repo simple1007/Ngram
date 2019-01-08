@@ -44,7 +44,7 @@ class Ngram(ABC):
         fileindex = 0
         filecount = 0
         fw = open(BASEPATH+ngramstr+'/'+self.wordtype+'%d.txt' % fileindex,'w',encoding='utf-8')
-        
+        #print(len(file.readlines()))
         #if self.N != 1:
         for line in ngrams(file,self.N,word=self.wordtype):
             #temp = line.replace('\n','').split('\t')
@@ -56,7 +56,8 @@ class Ngram(ABC):
                 if filecount % 1000 == 0:
                     fw.flush()
 
-                if fileindex >= 100000:
+                if filecount >= 500000:
+                    #print(filecount)
                     fileindex += 1
                     fw.close()
                     fw = open(BASEPATH+ngramstr+'/'+self.wordtype+'%d.txt' % fileindex,'w',encoding='utf-8')
@@ -73,7 +74,10 @@ class Ngram(ABC):
                 temp = line.replace('\n','').split('\t')
                 templine = makeline(temp)
                 prevgram[templine] += 1
-                currentgram[templine+',{}'.format(temp[self.N-1])] += 1
+                if self.N != 1:
+                    currentgram[templine+',{}'.format(temp[self.N-1])] += 1
+                else:
+                    currentgram[templine] += 1
         
         pathresult = path.replace('.txt','')
         with open(pathresult+'freq.txt','w',encoding='utf-8') as f:

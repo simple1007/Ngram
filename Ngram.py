@@ -7,7 +7,7 @@ from time import time
 import os
 import sys
 
-BASEPATH = '/home/nlp/Desktop/Ngram-new/'
+BASEPATH = '/home/nlp/Desktop/Ngram/'
 
 class Ngram(ABC):
     def __init__(self,N,path,wordtype):
@@ -56,7 +56,7 @@ class Ngram(ABC):
                 if filecount % 1000 == 0:
                     fw.flush()
 
-                if filecount >= 500000:
+                if filecount >= 50000000:
                     #print(filecount)
                     fileindex += 1
                     fw.close()
@@ -82,10 +82,11 @@ class Ngram(ABC):
         pathresult = path.replace('.txt','')
         with open(pathresult+'freq.txt','w',encoding='utf-8') as f:
             for key, value in currentgram.items():
-                temp = key.replace('\n','').split('\t')
-                templine = makeline(temp)
+                temp = key.replace('\n','').split(',')
+                #temp = temp.split
+                #templine = makeline(temp)
                 if self.N != 1:
-                    f.write(key+',{},{}\n'.format(prevgram[templine],value))
+                    f.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
                 else:
                     f.write(key+',{}\n'.format(value))
     
@@ -191,10 +192,13 @@ class Bigram(Ngram):
                 self.word[line[0]] += 1
                 self.bigram[(line[0], line[1])] += 1 
 
-    
     def make(self):
         makeline = lambda l : l[0] + '\t' + l[1]
         super(Bigram,self).make('bi',makeline)
+
+    def make_freq_out(self,path):
+        makeline = lambda l : l[0]
+        super(Bigram,self).make_freq_out(path,makeline)
 
 class Trigram(Ngram):
     def __init__(self,path,wordtype):
@@ -214,7 +218,7 @@ class Trigram(Ngram):
      
     def probs(self,n,order='desc'):
         self.triprob = {}
-        for key, value in self.triram.items():
+        for key, value in self.trigram.items():
               self.triprob[key] = value/self.bigram[(key[0], key[1])]
         # for key, value in self.bigram:
     
@@ -230,6 +234,10 @@ class Trigram(Ngram):
     def make(self):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2]
         super(Trigram,self).make('tri',makeline)
+    
+    def make_freq_out(self,path):
+        makeline = lambda l : l[0]+'\t'+l[1]
+        super(Trigram,self).make_freq_out(path,makeline)
 
 class Fourgram(Ngram):
     def __init__(self,path,wordtype):
@@ -265,6 +273,10 @@ class Fourgram(Ngram):
     def make(self):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3]
         super(Fourgram,self).make('four',makeline)
+    
+    def make_freq_out(self,path):
+        makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2]
+        super(Fourgram,self).make_freq_out(path,makeline)
 
 class Fivegram(Ngram):
     def __init__(self,path,wordtype):
@@ -272,7 +284,7 @@ class Fivegram(Ngram):
         #self.wordtype = 'sentence'
         #self.path = path
         #self.bigram = {}
-        self.fivgram = defaultdict(int)
+        self.fivegram = defaultdict(int)
         self.fourgram = defaultdict(int)
         #self.word = defaultdict(int)
     
@@ -300,6 +312,10 @@ class Fivegram(Ngram):
     def make(self):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4]
         super(Fivegram,self).make('five',makeline)
+    
+    def make_freq_out(self,path):
+        makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3]
+        super(Fivegram,self).make_freq_out(path,makeline)
 
 class Sixgram(Ngram):
     def __init__(self,path,wordtype):
@@ -307,7 +323,7 @@ class Sixgram(Ngram):
         #self.wordtype = 'sentence'
         #self.path = path
         #self.bigram = {}
-        self.fivgram = defaultdict(int)
+        self.fivegram = defaultdict(int)
         self.sixgram = defaultdict(int)
         #self.word = defaultdict(int)
     
@@ -319,7 +335,7 @@ class Sixgram(Ngram):
      
     def probs(self,n,order='desc'):
         self.sixprob = {}
-        for key, value in self.sixram.items():
+        for key, value in self.sixgram.items():
               self.sixprob[key] = value/self.fivegram[(key[0], key[1],key[2],key[3],key[4])]
         # for key, value in self.bigram:
     
@@ -335,6 +351,10 @@ class Sixgram(Ngram):
     def make(self):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4] + '\t' + l[5]
         super(Sixgram,self).make('six',makeline)
+
+    def make_freq_out(self,path):
+        makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4]
+        super(Sixgram,self).make_freq_out(path,makeline)
 
 class Sevengram(Ngram):
     def __init__(self,path,wordtype):
@@ -371,6 +391,9 @@ class Sevengram(Ngram):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4] + '\t' + l[5] + '\t' + l[6]
         super(Sevengram,self).make('seven',makeline)
     
+    def make_freq_out(self,path):
+        makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4] + '\t'+ l[5]
+        super(Sevengram,self).make_freq_out(path,makeline)
 
 def unimain(path,mode):
     unigram = Unigram(path,'blank')
@@ -398,7 +421,7 @@ def bimain(path,mode):
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
-def triimain(path,mode):
+def trimain(path,mode):
     unigram = Trigram(path,'blank')
     start = time()
 

@@ -3,6 +3,7 @@ from util import ngrams
 from collections import defaultdict
 from time import strftime
 from time import time
+from os import rename, listdir
 
 import os
 import sys
@@ -17,16 +18,16 @@ class Ngram(ABC):
 
     def ngrams(self):
         pass
-    
+    #빈도수 반환
     def freq(self,*word):
         pass
-    
+    #음절/어절 확률 반환
     def prob(self,*word):
         pass
-    
+    #빈도 카운트
     def freqs(self,n,order='desc'):
         pass
-    
+    #상위 n개의 확률 반환
     def probs(self,n,order='desc'):
         pass
     
@@ -89,7 +90,76 @@ class Ngram(ABC):
                     f.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
                 else:
                     f.write(key+',{}\n'.format(value))
+
+    def mergeBig(self,path):
+        if os.path.exists('output.txt'):
+            result2 = open('output.txt','r',encoding='utf-8')
+        
+        file = open(path,'r',encoding='utf-8')
+
+        prevgram = defaultdict(int)
+        currentgram = defaultdict(int)
+
+        file1flag = defaultdict(int)
+        file2flag = defaultdict(int)
+        
+        if self.N != 1:
+            for line in file:
+                temp = line.replace('\n','').split(',')
+                currentgram[temp[0]+','+temp[1]] += int(temp[3])
+
+                if temp[0] not in file1flag.keys():
+                    file1flag[temp[0]] += 1
+                    prevgram[temp[0]] += int(temp[2])
+                
+            result = open('output2.txt','w',encoding='utf-8')
+            if os.path.exists('output.txt'):
+                for line in result2:
+                    temp = line.replace('\n','').split(',')
+
+                    if temp[0] not in file2flag.keys():
+                        file2flag[temp[0]] += 1
+                        prevgram[temp[0]] += int(temp[2])
+
+                    if temp[0]+','+temp[1] in currentgram.keys():
+                        currentgram[temp[0]+','+temp[1]] += int(temp[3])
+                        result.write(temp[0]+','+temp[1]+',{},{}\n'.format(prevgram[temp[0]],currentgram[temp[0]+','+temp[1]]))
+                        del currentgram[temp[0]+','+temp[1]]
+                    
+                    else:
+                        result.write(temp[0]+','+temp[1]+',{},{}\n'.format(prevgram[temp[0]],temp[3]))
+                
+                result2.close()
+            else:
+                for key, value in currentgram.items():
+                    temp = key.split(',')
+                    result.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
+
+            
+            result.close()
+
+            files = listdir('.')
+
+            for name in files:
+                if name == 'output2.txt':
+                    rename(name,'output.txt')
+
+                
+
+            
     
+            # if self.N != 1:
+            #     for key, value in currentgram.items():
+            #         temp = key.split(',')
+            #         result.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
+            # else:
+            #     for key, value in currentgram.items():
+            #         result.write(key+',{}\n'.format(value))
+            
+            # result.close()
+
+        
+       
     def merge(self,path):
         if os.path.exists('output.txt'):
             result = open('output.txt','r',encoding='utf-8')
@@ -119,6 +189,7 @@ class Ngram(ABC):
                 if temp[0] not in file2flag.keys():
                     file2flag[temp[0]] += 1
                     prevgram[temp[0]] += int(temp[2])
+            
         else:
             if os.path.exists('output.txt'):
                 for line in result:
@@ -127,7 +198,7 @@ class Ngram(ABC):
 
             for line in file:
                 temp = line.replace('\n','').split(',')
-                print(temp)
+                # print(temp)
                 currentgram[temp[0]] += int(temp[1])
         
         if os.path.exists('output.txt'):
@@ -497,7 +568,7 @@ def sixmain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)
@@ -512,7 +583,7 @@ def sevenmain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)

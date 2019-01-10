@@ -111,7 +111,7 @@ class Ngram(ABC):
                 if temp[0] not in file1flag.keys():
                     file1flag[temp[0]] += 1
                     prevgram[temp[0]] += int(temp[2])
-                
+                 
             result = open('output2.txt','w',encoding='utf-8')
             if os.path.exists('output.txt'):
                 for line in result2:

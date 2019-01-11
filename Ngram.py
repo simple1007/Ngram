@@ -57,7 +57,7 @@ class Ngram(ABC):
                 if filecount % 1000 == 0:
                     fw.flush()
 
-                if filecount >= 50000000:
+                if filecount >= 20000000:
                     #print(filecount)
                     fileindex += 1
                     fw.close()
@@ -68,28 +68,32 @@ class Ngram(ABC):
         file.close()
     
     def make_freq_out(self,path,makeline):
-        prevgram = defaultdict(int)
+        #prevgram = defaultdict(int)
         currentgram = defaultdict(int)
         with open(path,'r',encoding='utf-8') as f:
             for line in f:
-                temp = line.replace('\n','').split('\t')
-                templine = makeline(temp)
-                prevgram[templine] += 1
-                if self.N != 1:
-                    currentgram[templine+',{}'.format(temp[self.N-1])] += 1
-                else:
-                    currentgram[templine] += 1
+                #print(line)
+                temp = line.replace('\n','').replace('\t',',')#.split('\t')
+                # templine = makeline(temp)
+                # templine = templine.replace('\t',',')
+                # print(temp)
+                # print(templine)
+                #prevgram[templine] += 1
+                #if self.N != 1:
+                #    currentgram[templine+',{}'.format(temp[self.N-1])] += 1
+                #else:
+                currentgram[temp] += 1
         
         pathresult = path.replace('.txt','')
         with open(pathresult+'freq.txt','w',encoding='utf-8') as f:
             for key, value in currentgram.items():
-                temp = key.replace('\n','').split(',')
+                #temp = key.replace('\n','').replace('\t',',')
                 #temp = temp.split
                 #templine = makeline(temp)
-                if self.N != 1:
-                    f.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
-                else:
-                    f.write(key+',{}\n'.format(value))
+                #if self.N != 1:
+                    #f.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
+                #else:
+                f.write(('\t{}\t'+ key+'\n').format(value))
 
     def mergeBig(self,path):
         if os.path.exists('output.txt'):
@@ -97,52 +101,59 @@ class Ngram(ABC):
         
         file = open(path,'r',encoding='utf-8')
 
-        prevgram = defaultdict(int)
+        # prevgram = defaultdict(int)
         currentgram = defaultdict(int)
 
-        file1flag = defaultdict(int)
-        file2flag = defaultdict(int)
+        # file1flag = defaultdict(int)
+        # file2flag = defaultdict(int)
         
-        if self.N != 1:
-            for line in file:
-                temp = line.replace('\n','').split(',')
-                currentgram[temp[0]+','+temp[1]] += int(temp[3])
+        # if self.N != 1:
+        for line in file:
+            temp = line.replace('\n','').split('\t')
+            currentgram[temp[2]] += int(temp[1])
 
-                if temp[0] not in file1flag.keys():
-                    file1flag[temp[0]] += 1
-                    prevgram[temp[0]] += int(temp[2])
-                 
-            result = open('output2.txt','w',encoding='utf-8')
-            if os.path.exists('output.txt'):
-                for line in result2:
-                    temp = line.replace('\n','').split(',')
-
-                    if temp[0] not in file2flag.keys():
-                        file2flag[temp[0]] += 1
-                        prevgram[temp[0]] += int(temp[2])
-
-                    if temp[0]+','+temp[1] in currentgram.keys():
-                        currentgram[temp[0]+','+temp[1]] += int(temp[3])
-                        result.write(temp[0]+','+temp[1]+',{},{}\n'.format(prevgram[temp[0]],currentgram[temp[0]+','+temp[1]]))
-                        del currentgram[temp[0]+','+temp[1]]
-                    
-                    else:
-                        result.write(temp[0]+','+temp[1]+',{},{}\n'.format(prevgram[temp[0]],temp[3]))
+            #if temp[0] not in file1flag.keys():
+            #    file1flag[temp[0]] += 1
+            #    prevgram[temp[0]] += int(temp[2])
                 
-                result2.close()
-            else:
-                for key, value in currentgram.items():
-                    temp = key.split(',')
-                    result.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
+        result = open('output2.txt','w',encoding='utf-8')
+        if os.path.exists('output.txt'):
+            for line in result2:
+                # print(line)
+                # print(line)
+                temp = line.replace('\n','').split('\t')
+
+                #if temp[0] not in file2flag.keys():
+                #    file2flag[temp[0]] += 1
+                #    prevgram[temp[0]] += int(temp[2])
+                # print(temp)
+                if temp[2] in currentgram.keys():
+                    currentgram[temp[2]] += int(temp[1])
+                    result.write(('\t{}\t'+ temp[2]+'\n').format( currentgram[temp[2]]))
+                    # result.write(temp[0]+','+temp[1]+',{},{}\n'.format(prevgram[temp[0]],currentgram[temp[0]+','+temp[1]]))
+                    del currentgram[temp[2]]
+                
+                else:
+                    result.write(('\t{}\t'+ temp[2]+'\n').format(temp[1]))
+            
+            for key, value in currentgram.items():
+                #temp = key.split('')
+                result.write(('\t{}\t'+ key+'\n').format(value))
+
+            result2.close()
+        else:
+            for key, value in currentgram.items():
+                #temp = key.split(',')
+                result.write(('\t{}\t'+ key+'\n').format(value))
 
             
-            result.close()
+        result.close()
+        file.close()
+        files = listdir('.')
 
-            files = listdir('.')
-
-            for name in files:
-                if name == 'output2.txt':
-                    rename(name,'output.txt')
+        for name in files:
+            if name == 'output2.txt':
+                rename(name,'output.txt')
 
                 
 
@@ -493,7 +504,7 @@ def unimain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)
@@ -508,7 +519,7 @@ def bimain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)
@@ -523,7 +534,7 @@ def trimain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)
@@ -538,7 +549,7 @@ def fourmain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)
@@ -553,7 +564,7 @@ def fivemain(path,mode):
     if mode == 'c':
         unigram.make_freq_out(path)
     if mode == 'me':
-        unigram.merge(path)
+        unigram.mergeBig(path)
 
     end = time()
     spent = int(end - start)

@@ -1,7 +1,7 @@
 def ngrams(text, n, word='word'):
     #result = []
     for line in text:
-        line = line.replace('\'','').replace('\n','').replace('"','').replace('.','').replace(' ','_')
+        line = line.replace('\'','').replace('\n','').replace('"','').replace('.','').replace(' ','_').replace(',','')
         if word == 'word':
             templine = line.split(' ')
         else:

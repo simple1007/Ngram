@@ -11,6 +11,9 @@ def ngrams(text, n, word='word'):
         templine.append('SE')
         #yield enumerate(templine)
         tempresult = []
+        if len(templine) < n:
+            a = ['_'] * (n - len(templine))
+            templine += a
         for index, tline in enumerate(templine):
             if index == len(templine) - n + 1:
                 break

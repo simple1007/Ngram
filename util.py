@@ -1,10 +1,14 @@
 def ngrams(text, n, word='word'):
     #result = []
     for line in text:
-        line = line.replace('\'','').replace('\n','').replace('"','').replace('.','').replace(' ','_').replace(',','')
+        
         if word == 'word':
+            line = line.replace('\'','').replace('\n','').replace('"','').replace('.','').replace('\t',' ').replace(',','').replace('(','').replace(')','').replace('=','').replace('  ',' ')
+            line = ' '.join(line.split())
             templine = line.split(' ')
         else:
+            line = line.replace('\'','').replace('\n','').replace('"','').replace('.','').replace(' ','').replace('\t','').replace(',','').replace('(','').replace(')','').replce('=','').replace('  ',' ')
+            line = ' '.join(line.split())
             templine = list(line)
         
         templine.insert(0, 'SS')

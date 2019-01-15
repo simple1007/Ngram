@@ -57,7 +57,7 @@ class Ngram(ABC):
                 if filecount % 1000 == 0:
                     fw.flush()
 
-                if filecount >= 20000000:
+                if filecount >= 50000000:
                     #print(filecount)
                     fileindex += 1
                     fw.close()
@@ -94,6 +94,78 @@ class Ngram(ABC):
                     #f.write(key+',{},{}\n'.format(prevgram[temp[0]],value))
                 #else:
                 f.write(('\t{}\t'+ key+'\n').format(value))
+
+    def prob_outs(self,path,prevgram,makeline):
+        file = open('../'+prevgram+'/output.txt','r',encoding='utf-8')
+        result = open('prob.txt','w',encoding='utf-8')
+        map = defaultdict(int)
+        with open(path,'r',encoding='utf-8') as f:
+            count = 0
+
+            for ll in file:
+                # print('ll',ll)
+                temp2 = ll.replace('\n','').split('\t')
+                bifreq = int(temp2[1])
+                bistring = temp2[2]
+                map[bistring] = bifreq
+
+                if sys.getsizeof(map)/1024/1024 >= 10:
+                    # del map
+                    # map = defaultdict(int)
+                    break 
+                # if bistring == bigram:
+                #     # print(freq,bifreq,type(freq),type(bifreq))
+                #     prob = freq/bifreq
+                #     rl = ('\t' + '{}'+ '\t' + '{:.10f}' + '\t' + string+'\n').format(freq,prob) 
+                #     result.write(rl)
+                #     break
+
+            for line in f:
+                # print('line',line)
+                file.seek(0)
+                temp = line.replace('\n','').split('\t')
+                freq = int(temp[1])
+                string = temp[2]
+                bigramtemp = temp[2].split(',')
+                bigram = makeline(bigramtemp)#bigramtemp[0]+','+bigramtemp[1]
+                count+=1
+                
+                if sys.getsizeof(map)/1024/1024 >= 10 and bigram not in map.keys():
+                    for ll in file:
+                        temp2 = ll.replace('\n','').split('\t')
+                        bifreq = int(temp2[1])
+                        bistring = temp2[2]
+                        prob = freq/bifreq#(freq + 1)/(bifreq + 3016)
+                        # print('a','{}'.format(prob))
+                        rl = ('\t' + '{}'+ '\t' + '{:.10f}' + '\t' + string+'\n').format(freq,prob) 
+                        result.write(rl)
+                        break
+                else:
+                    prob = freq/map[bigram]#(freq + 1)/(map[bigram] + 3016)
+                    # print('b','{}'.format(prob))
+                    rl = ('\t' + '{}'+ '\t' + '{:.10f}' + '\t' + string+'\n').format(freq,prob) 
+                    result.write(rl)
+                # else:
+                #     for ll in file:
+                #         # print('ll',ll)
+                #         temp2 = ll.replace('\n','').split('\t')
+                #         bifreq = int(temp2[1])
+                #         bistring = temp2[2]
+                #         map[bigram] = bifreq 
+                #         if bistring == bigram:
+                #             # print(freq,bifreq,type(freq),type(bifreq))
+                #             prob = freq/bifreq
+                #             rl = ('\t' + '{}'+ '\t' + '{:.10f}' + '\t' + string+'\n').format(freq,prob) 
+                #             result.write(rl)
+                #             break
+                if count % 10000 == 0:
+                    print(count)
+
+                # if sys.getsizeof(map)/1024/1024 >= 4:
+                #     del map
+                #     map = defaultdict(int)
+        file.close()
+        result.close()
 
     def mergeBig(self,path):
         if os.path.exists('output.txt'):
@@ -236,10 +308,10 @@ class Unigram(Ngram):
         #self.word = defaultdict(int)
     
     def freq(self, *word):
-        return self.unigram[word[0]]
+        return self.unigram[(word[0])]
 
     def prob(self,*word):
-        return self.unigram[word[0]] / sum(self.unigram.values())
+        return self.unigram[(word[0])] / sum(self.unigram.values())
      
     def probs(self,n,order='desc'):
         self.uniprob = {}
@@ -253,7 +325,23 @@ class Unigram(Ngram):
     
         for line_list in ngrams(text,self.N):
             for line in line_list:
-                self.unigram[line[0]] += 1        
+                self.unigram[(line[0])] += 1        
+
+    def probs_out(self,path):
+        with open(path,'r',encoding='utf-8') as f:
+            length = 0
+            for i in f:
+                temp = i.split('\t')
+                length += int(temp[1])
+
+            f.seek(0)
+            file = open('prob.txt','w',encoding='utf-8')
+            for line in f:
+                temp = line.split('\t')
+                prob = int(temp[1])/length
+
+                rl = ('\t' + temp[1] + '\t' + '{:.10f}' + '\t' + temp[2]).format(prob)
+                file.write(rl)
 
     def make(self):
         makeline = lambda l : l[0]
@@ -299,6 +387,10 @@ class Bigram(Ngram):
     def make_freq_out(self,path):
         makeline = lambda l : l[0]
         super(Bigram,self).make_freq_out(path,makeline)
+    
+    def prob_outs(self,path):
+        makeline = lambda l : l[0]
+        super(Bigram,self).prob_outs(path,'uni',makeline)
 
 class Trigram(Ngram):
     def __init__(self,path,wordtype):
@@ -338,6 +430,10 @@ class Trigram(Ngram):
     def make_freq_out(self,path):
         makeline = lambda l : l[0]+'\t'+l[1]
         super(Trigram,self).make_freq_out(path,makeline)
+    
+    def prob_outs(self,path):
+        makeline = lambda l : l[0]+','+l[1]
+        super(Trigram,self).prob_outs(path,'bi',makeline)
 
 class Fourgram(Ngram):
     def __init__(self,path,wordtype):
@@ -377,6 +473,10 @@ class Fourgram(Ngram):
     def make_freq_out(self,path):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2]
         super(Fourgram,self).make_freq_out(path,makeline)
+    
+    def prob_outs(self,path):
+        makeline = lambda l : l[0]+','+l[1]+','+l[2]
+        super(Fourgram,self).prob_outs(path,'tri',makeline)
 
 class Fivegram(Ngram):
     def __init__(self,path,wordtype):
@@ -416,6 +516,10 @@ class Fivegram(Ngram):
     def make_freq_out(self,path):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3]
         super(Fivegram,self).make_freq_out(path,makeline)
+    
+    def prob_outs(self,path):
+        makeline = lambda l : l[0]+','+l[1]+','+l[2]+','+l[3]
+        super(Fivegram,self).prob_outs(path,'four',makeline)
 
 class Sixgram(Ngram):
     def __init__(self,path,wordtype):
@@ -455,6 +559,10 @@ class Sixgram(Ngram):
     def make_freq_out(self,path):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4]
         super(Sixgram,self).make_freq_out(path,makeline)
+    
+    def prob_outs(self,path):
+        makeline = lambda l : l[0]+','+l[1]+','+l[2]+','+l[3]+','+l[4]
+        super(Sixgram,self).prob_outs(path,'five',makeline)
 
 class Sevengram(Ngram):
     def __init__(self,path,wordtype):
@@ -494,9 +602,13 @@ class Sevengram(Ngram):
     def make_freq_out(self,path):
         makeline = lambda l : l[0] + '\t' + l[1] + '\t' + l[2] + '\t' + l[3] + '\t' + l[4] + '\t'+ l[5]
         super(Sevengram,self).make_freq_out(path,makeline)
+    
+    def prob_outs(self,path):
+        makeline = lambda l : l[0]+','+l[1]+','+l[2]+','+l[3]+','+l[4]+','+l[5]
+        super(Sevengram,self).prob_outs(path,'six',makeline)
 
 def unimain(path,mode):
-    unigram = Unigram(path,'blank')
+    unigram = Unigram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -505,13 +617,15 @@ def unimain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
+    if mode == 'p':
+        unigram.probs_out(path)
 
     end = time()
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
 def bimain(path,mode):
-    unigram = Bigram(path,'blank')
+    unigram = Bigram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -520,13 +634,14 @@ def bimain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
-
+    if mode == 'p':
+        unigram.prob_outs(path)
     end = time()
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
 def trimain(path,mode):
-    unigram = Trigram(path,'blank')
+    unigram = Trigram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -535,13 +650,15 @@ def trimain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
+    if mode == 'p':
+        unigram.prob_outs(path)
 
     end = time()
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
 def fourmain(path,mode):
-    unigram = Fourgram(path,'blank')
+    unigram = Fourgram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -550,13 +667,15 @@ def fourmain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
+    if mode == 'p':
+        unigram.prob_outs(path)
 
     end = time()
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
 def fivemain(path,mode):
-    unigram = Fivegram(path,'blank')
+    unigram = Fivegram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -565,13 +684,15 @@ def fivemain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
+    if mode == 'p':
+        unigram.prob_outs(path)
 
     end = time()
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
 def sixmain(path,mode):
-    unigram = Sixgram(path,'blank')
+    unigram = Sixgram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -580,13 +701,15 @@ def sixmain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
+    if mode == 'p':
+        unigram.prob_outs(path)
 
     end = time()
     spent = int(end - start)
     print('{:02d}:{:02d}:{:02d}'.format(spent // 3600, (spent % 3600 // 60), spent % 60))
 
 def sevenmain(path,mode):
-    unigram = Sevengram(path,'blank')
+    unigram = Sevengram(path,'word')
     start = time()
 
     if mode == 'm':
@@ -595,6 +718,8 @@ def sevenmain(path,mode):
         unigram.make_freq_out(path)
     if mode == 'me':
         unigram.mergeBig(path)
+    if mode == 'p':
+        unigram.prob_outs(path)
 
     end = time()
     spent = int(end - start)

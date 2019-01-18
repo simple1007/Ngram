@@ -158,8 +158,8 @@ class Ngram(ABC):
                 #             rl = ('\t' + '{}'+ '\t' + '{:.10f}' + '\t' + string+'\n').format(freq,prob) 
                 #             result.write(rl)
                 #             break
-                if count % 10000 == 0:
-                    print(count)
+                # if count % 10000 == 0:
+                    # print(count)
 
                 # if sys.getsizeof(map)/1024/1024 >= 4:
                 #     del map
